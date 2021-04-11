@@ -14,3 +14,4 @@ serde_bytes = "0.11.5"
 rust-crypto = "0.2.36"
 url = "2.2.1"
 reqwest = { version = "0.11.2", features = ["blocking"] }
+percent-encoding = "2"

@@ -30,7 +30,7 @@ pub struct Info {
     #[serde(default)]
     md5sum: Option<String>,
     #[serde(default)]
-    length: Option<i64>,
+    pub length: Option<i64>,
     #[serde(default)]
     files: Option<Vec<File>>,
     #[serde(default)]
@@ -45,9 +45,9 @@ pub struct Info {
 #[derive(Default, Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(default)]
 pub struct TorrentMetadata {
-    info: Info,
+    pub info: Info,
     #[serde(default)]
-    announce: Option<String>,
+    pub announce: Option<String>,
     #[serde(default)]
     nodes: Option<Vec<Node>>,
     #[serde(default)]
@@ -65,7 +65,7 @@ pub struct TorrentMetadata {
     #[serde(default)]
     #[serde(rename="created by")]
     created_by: Option<String>,
-    info_hash: Vec<u8>
+    pub info_hash: Vec<u8>
 }
 
 
