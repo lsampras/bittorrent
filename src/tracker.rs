@@ -24,7 +24,7 @@ pub struct TrackerResponse {
     pub peers: Vec<Peer>
 }
 
-pub fn get_peers(metadata: TorrentMetadata, port: u16) -> TrackerResponse {
+pub fn get_peers(metadata: &TorrentMetadata, port: u16) -> TrackerResponse {
 
     let query_url = get_formatted_url(&metadata, &port);
     // println!("{:?}", query_url);
@@ -34,7 +34,7 @@ pub fn get_peers(metadata: TorrentMetadata, port: u16) -> TrackerResponse {
 
     let client = reqwest::blocking::Client::new();
     let body = client.get(query_url).headers(headers).send().unwrap().bytes().unwrap();
-    let mut tracker_response: TrackerResponseRaw = serde_bencode::de::from_bytes(&body).unwrap();
+    let tracker_response: TrackerResponseRaw = serde_bencode::de::from_bytes(&body).unwrap();
 
     let mut parsed_peers: Vec<Peer> = Vec::new();
     for i in 0..(tracker_response.peers.len() / 6) {

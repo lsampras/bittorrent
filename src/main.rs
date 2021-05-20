@@ -11,5 +11,7 @@ pub fn main()  {
     let filename = &args[1];
     let metadata = torrent_meta::TorrentMetadata::from_file(filename);
     // metadata.pretty_print();
-    let response = tracker::get_peers(metadata, 8080)
+    let mut response = tracker::get_peers(&metadata, 8080);
+    let peer = &mut response.peers[0];
+    peer.connect(&metadata)
 }

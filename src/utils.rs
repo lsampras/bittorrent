@@ -1,6 +1,9 @@
 use crate::torrent_meta::TorrentMetadata;
 use percent_encoding::{percent_encode, AsciiSet, CONTROLS};
 
+// TODO: Use a random string for PEER ID
+pub const PEER_ID : &str = "-TR2940-k9hj0wgej5ch";
+pub const PROTOCOL: &'static str = "BitTorrent protocol";
 
 pub fn parameterize(parameters: Vec<(&str, &str)>) -> String {
     let query_params: Vec<String> = parameters.iter()
@@ -12,7 +15,7 @@ pub fn parameterize(parameters: Vec<(&str, &str)>) -> String {
 
 pub fn get_formatted_url(metadata: &TorrentMetadata, port: &u16) -> String {
 
-    let peer_id = "-TR2940-k8hj0wgej6ch";
+    let peer_id = PEER_ID;
     let uploaded = 0.to_string();
     let downloaded = 0.to_string();
     let left = metadata.info.length.unwrap().to_string();
