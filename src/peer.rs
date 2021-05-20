@@ -18,6 +18,7 @@ impl std::fmt::Display for Peer {
     }
 }
 
+
 impl Peer {
     pub fn from_bytes(v: &[u8]) -> Self {
         let ip = IpAddr::V4(Ipv4Addr::new(v[0], v[1], v[2], v[3]));
@@ -28,37 +29,61 @@ impl Peer {
         }
     }
 
-    pub fn connect(&mut self, torrent_mutex: &TorrentMetadata) {
-        println!("Connecting to {}...", &self);
-        let addr = SocketAddr::new(self.ip, self.port);
+    pub fn connect(&mut self, torrent_meta: TorrentMetadata) {
+        let mut peer_connection = PeerConnection::new(self.to_owned(), torrent_meta).unwrap();
+        &mut peer_connection.handshake();
+    }
+
+}
+
+
+struct PeerConnection {
+    peer: Peer,
+    stream: TcpStream,
+    torrent: TorrentMetadata
+}
+
+impl PeerConnection {
+
+    pub fn new(peer: Peer, torrent_meta:TorrentMetadata) -> Result<PeerConnection, Error> {
+        println!("Connecting to {}...", &peer);
+        let addr = SocketAddr::new(peer.ip, peer.port);
         match TcpStream::connect(&addr) {
-            Ok(mut stream_obj) => {
-                println!("Connected successfully to {}", &self);
+            Ok(stream_obj) => {
+                println!("Connected successfully to {}", &peer);
 
-                let stream = &mut stream_obj;
-                let mut message = vec![];
-                message.push(PROTOCOL.len() as u8);
-                message.extend(PROTOCOL.bytes());
-                message.extend(vec![0;8].into_iter());
-                message.extend(torrent_mutex.info_hash.iter().cloned());
-                message.extend(PEER_ID.bytes());
-                stream.write_all(&message).unwrap();
-                println!("Sent handshake");
-
-                let pstrlen = self.read_n(1, stream).unwrap();
-                let _pstr = self.read_n(pstrlen[0] as u32, stream).unwrap();
-                let _reserved = self.read_n(8, stream).unwrap();
-                let _info_hash = self.read_n(20, stream).unwrap();
-                let _peer_id = self.read_n(20, stream).unwrap();
-                println!("Received handshake");
+                Ok(PeerConnection {
+                    peer: peer,
+                    stream: stream_obj,
+                    torrent: torrent_meta
+                })
             }
-            _ => println!("Failed to connect")
+            Err(e) => panic!("Failed to create a PeerConnection : {}", e)
         }
     }
 
-    fn read_n(&mut self, bytes_to_read: u32, stream: &mut TcpStream) -> Result<Vec<u8>, Error> {
+    fn handshake(&mut self) {
+
+        let mut message = vec![];
+        message.push(PROTOCOL.len() as u8);
+        message.extend(PROTOCOL.bytes());
+        message.extend(vec![0;8].into_iter());
+        message.extend(self.torrent.info_hash.iter().cloned());
+        message.extend(PEER_ID.bytes());
+        self.stream.write_all(&message).unwrap();
+
+        let pstrlen = self.read(1).unwrap();
+        let _pstr = self.read(pstrlen[0] as u32).unwrap();
+        let _reserved = self.read(8).unwrap();
+        let _info_hash = self.read(20).unwrap();
+        let _peer_id = self.read(20).unwrap();
+        println!("Received handshake");
+    }
+
+    fn read(&mut self, bytes_to_read: u32) -> Result<Vec<u8>, Error> {
         let mut buf = vec![];
-        let mut take = stream.take(bytes_to_read as u64);
+        let stream_ref = &mut self.stream;
+        let mut take = stream_ref.take(bytes_to_read as u64);
         let bytes_read = take.read_to_end(&mut buf);
         match bytes_read {
             Ok(n) => {

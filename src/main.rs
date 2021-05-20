@@ -13,5 +13,5 @@ pub fn main()  {
     // metadata.pretty_print();
     let mut response = tracker::get_peers(&metadata, 8080);
     let peer = &mut response.peers[0];
-    peer.connect(&metadata)
+    peer.connect(metadata)
 }
