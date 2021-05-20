@@ -1,5 +1,4 @@
 use crate::torrent_meta::TorrentMetadata;
-use url::Url;
 use percent_encoding::{percent_encode, AsciiSet, CONTROLS};
 
 

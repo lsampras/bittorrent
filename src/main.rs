@@ -3,6 +3,7 @@ use std::env;
 mod torrent_meta;
 mod tracker;
 mod utils;
+mod peer;
 // step 1 parse torrent files
 
 pub fn main()  {
@@ -10,5 +11,5 @@ pub fn main()  {
     let filename = &args[1];
     let metadata = torrent_meta::TorrentMetadata::from_file(filename);
     // metadata.pretty_print();
-    tracker::get_peers(metadata,8080)
+    let response = tracker::get_peers(metadata, 8080)
 }
