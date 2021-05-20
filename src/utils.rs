@@ -1,5 +1,7 @@
 use crate::torrent_meta::TorrentMetadata;
 use percent_encoding::{percent_encode, AsciiSet, CONTROLS};
+use std::io::Cursor;
+use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 
 // TODO: Use a random string for PEER ID
 pub const PEER_ID : &str = "-TR2940-k9hj0wgej5ch";
@@ -38,4 +40,10 @@ pub fn get_formatted_url(metadata: &TorrentMetadata, port: &u16) -> String {
 
     let query_params = parameterize(params);
     format!("{}?{}", base_url, query_params)
+}
+
+
+pub fn parse_big_endian(num: &[u8]) -> u32 {
+    let mut buf = Cursor::new(&num);
+    buf.read_u32::<BigEndian>().unwrap()
 }

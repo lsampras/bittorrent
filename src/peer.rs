@@ -2,9 +2,9 @@ use std::net::{IpAddr, Ipv4Addr};
 use std::net::{TcpStream, SocketAddr};
 use std::fmt::Formatter;
 use std::io::{Read, Write, Error, ErrorKind};
-
+use std::time::Duration;
 use crate::torrent_meta::TorrentMetadata;
-use crate::utils::{PEER_ID, PROTOCOL};
+use crate::utils::{PEER_ID, PROTOCOL, parse_big_endian};
 
 #[derive(Debug, Clone, PartialEq, Copy)]
 pub struct Peer {
@@ -32,6 +32,13 @@ impl Peer {
     pub fn connect(&mut self, torrent_meta: TorrentMetadata) {
         let mut peer_connection = PeerConnection::new(self.to_owned(), torrent_meta).unwrap();
         &mut peer_connection.handshake();
+
+        // This won't work for now since we need to keep asking the peer for new pieces
+        let mut timer = 0;
+        while timer < 50 {
+            peer_connection.fetch_data();
+            timer = timer + 1;
+        }
     }
 
 }
@@ -48,7 +55,7 @@ impl PeerConnection {
     pub fn new(peer: Peer, torrent_meta:TorrentMetadata) -> Result<PeerConnection, Error> {
         println!("Connecting to {}...", &peer);
         let addr = SocketAddr::new(peer.ip, peer.port);
-        match TcpStream::connect(&addr) {
+        match TcpStream::connect_timeout(&addr, Duration::new(10,0)) {
             Ok(stream_obj) => {
                 println!("Connected successfully to {}", &peer);
 
@@ -78,6 +85,17 @@ impl PeerConnection {
         let _info_hash = self.read(20).unwrap();
         let _peer_id = self.read(20).unwrap();
         println!("Received handshake");
+    }
+
+    fn fetch_data(&mut self) {
+
+        match self.read(4) {
+            Ok(length) => {
+                let payload = self.read(parse_big_endian(&length.as_slice()));
+                println!("Length {:?} Payload: {:?}", length, payload);
+            }
+            Err(_) => println!("No data received for {}", &self.peer)
+        }
     }
 
     fn read(&mut self, bytes_to_read: u32) -> Result<Vec<u8>, Error> {
