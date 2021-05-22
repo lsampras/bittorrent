@@ -40,6 +40,7 @@ pub struct Info {
     #[serde(default)]
     #[serde(rename="root hash")]
     root_hash: Option<String>,
+    pub pieces_hash: Option<Vec<Vec<u8>>>
 }
 
 #[derive(Default, Serialize, Deserialize, Debug, Clone, PartialEq)]
@@ -69,60 +70,6 @@ pub struct TorrentMetadata {
 }
 
 
-// #[derive(Debug, Deserialize, Serialize)]
-// struct File {
-//     path: Vec<String>,
-//     length: i64,
-//     #[serde(default)]
-//     md5sum: Option<String>,
-// }
-
-// #[derive(Debug, Default, Deserialize, Serialize)]
-// pub struct Info {
-//     name: String,
-//     pieces: ByteBuf,
-//     #[serde(rename="piece length")]
-//     piece_length: i64,
-//     #[serde(default)]
-//     md5sum: Option<String>,
-//     #[serde(default)]
-//     pub length: Option<i64>,
-//     #[serde(default)]
-//     files: Option<Vec<File>>,
-//     #[serde(default)]
-//     private: Option<u8>,
-//     #[serde(default)]
-//     path: Option<Vec<String>>,
-    // #[serde(default)]
-    // #[serde(rename="root hash")]
-    // root_hash: Option<String>,
-// }
-
-// // the Deserialize derive is provided by serde, it causes the code
-// // to be generated that is needed for deserialization
-// #[derive(Default, Debug, Deserialize)]
-// // this tells serde you want to use kebab-case, which is 
-// // with dashes instead of underscores for field names
-// #[serde(rename_all = "kebab-case")]
-// // this tells serde to default values to the empty case if not provided
-// #[serde(default)]
-// pub struct Torrent {
-//     pub info: Info,
-//     pub announce: String,
-//     // nodes: Option<Vec<Node>>,
-//     encoding: Option<String>,
-//     httpseeds: Vec<String>,
-//     #[serde(rename="announce-list")]
-//     announce_list: Vec<Vec<String>>,
-//     #[serde(rename="creation date")]
-//     creation_date: i64,
-//     #[serde(rename="comment")]
-//     comment: String,
-//     #[serde(rename="created by")]
-//     created_by: String,
-//     pub info_hash: Vec<u8>,
-// }
-
 impl TorrentMetadata {
 
     pub fn from_file(filename: &String) -> TorrentMetadata {
@@ -131,6 +78,7 @@ impl TorrentMetadata {
         f.read_to_end(&mut s).unwrap();
         let mut decoded: TorrentMetadata = serde_bencode::from_bytes(&s).unwrap();
         decoded.info_hash = create_info_hash(&decoded.info);
+        decoded.info.parse_pieces_hash();
         decoded
     }
 
@@ -150,6 +98,7 @@ impl TorrentMetadata {
         println!("created by:\t{:?}", self.created_by);
         println!("encoding:\t{:?}", self.encoding);
         println!("piece length:\t{:?}", self.info.piece_length);
+        println!("pieces:\t{:?}", self.info.pieces_hash);
         println!("private:\t{:?}", self.info.private);
         println!("root hash:\t{:?}", self.info.root_hash);
         println!("md5sum:\t\t{:?}", self.info.md5sum);
@@ -161,6 +110,14 @@ impl TorrentMetadata {
                 println!("file md5sum:\t{:?}", f.md5sum);
             }
         }
+    }
+}
+
+impl Info {
+    pub fn parse_pieces_hash(&mut self) {
+        // let pieces = &mut self.pieces;
+        let hash_pieces = self.pieces.as_slice();
+        self.pieces_hash = Some(hash_pieces.chunks_exact(20).map(|hash| hash.to_owned()).collect());
     }
 }
 

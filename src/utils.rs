@@ -47,3 +47,18 @@ pub fn parse_big_endian(num: &[u8]) -> u32 {
     let mut buf = Cursor::new(&num);
     buf.read_u32::<BigEndian>().unwrap()
 }
+
+
+
+pub fn convert_u8_to_bits(data_byte: &u8) -> Vec<bool>{
+    vec![
+        data_byte & (1 << 0) != 0,
+        data_byte & (1 << 1) != 0,
+        data_byte & (1 << 2) != 0,
+        data_byte & (1 << 3) != 0,
+        data_byte & (1 << 4) != 0,
+        data_byte & (1 << 5) != 0,
+        data_byte & (1 << 6) != 0,
+        data_byte & (1 << 7) != 0,
+    ]
+}
