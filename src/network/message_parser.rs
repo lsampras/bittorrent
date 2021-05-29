@@ -48,14 +48,21 @@ impl Message {
     pub fn to_bytes(&self) -> Vec<u8> {
         match self {
             Message::Request(piece_index, offset, length) => {
-                let mut data: Vec<u8> = vec![6];
+                let mut data: Vec<u8> = u32_to_big_endian(&13);
+                data.push(6);
                 data.extend(u32_to_big_endian(piece_index));
                 data.extend(u32_to_big_endian(offset));
                 data.extend(u32_to_big_endian(length));
+                data
+            },
+            Message::Interested => {
+                let mut data: Vec<u8> = u32_to_big_endian(&1);
+                data.push(2);
                 data
             }
             _ => panic!("Serialize not implemented for")
         }
     }
+
 }
 

@@ -136,22 +136,13 @@ impl PeerState {
                             println!("{:?} is not interested", self.peer);
                         },
                         Message::Have(index) => {
+                            println!("Received Have for {}", index);
                             self.have[index as usize] = true;
                         },
                         Message::Bitfield(have) => {
                             self.have = have;
-                            // TODO: request next piece
-                            if !self.choked {
-
-                                match torrent_state.get_block_request() {
-                                    Some((index, offset, len)) => {
-    
-                                        println!("Requesting {}  for piece {}, offset {}, len{}", self.peer, index, offset, len);
-                                        self.connection.send_data(Message::Request(index, offset as u32, len as u32));
-                                    },
-                                    None => {stop_flag = true;}
-                                }
-                            }
+                            println!("Received Bit Field");
+                            self.connection.send_data(Message::Interested);
                         },
                         Message::Request(piece_index, offset, length) => {
                             // TODO: implement this
