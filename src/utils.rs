@@ -42,13 +42,16 @@ pub fn get_formatted_url(metadata: &TorrentMetadata, port: &u16) -> String {
     format!("{}?{}", base_url, query_params)
 }
 
-
 pub fn parse_big_endian(num: &[u8]) -> u32 {
     let mut buf = Cursor::new(&num);
     buf.read_u32::<BigEndian>().unwrap()
 }
 
-
+pub fn u32_to_big_endian(integer: &u32) -> Vec<u8> {
+    let mut bytes = vec![];
+    bytes.write_u32::<BigEndian>(integer.to_owned()).unwrap();
+    bytes
+}
 
 pub fn convert_u8_to_bits(data_byte: &u8) -> Vec<bool>{
     vec![

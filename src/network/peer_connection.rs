@@ -8,6 +8,7 @@ use crate::utils::{PEER_ID, PROTOCOL, parse_big_endian};
 use crate::network::message_parser::Message;
 use crate::peer::Peer;
 
+#[derive(Debug)]
 pub struct PeerConnection {
     peer: Peer,
     stream: TcpStream,
@@ -51,18 +52,28 @@ impl PeerConnection {
         println!("Received handshake");
     }
 
-    pub fn fetch_data(&mut self) {
-
+    pub fn fetch_data(&mut self) -> Option<Message> {
         match self.read(4) {
-            Ok(length) => {
+            Some(length) => {
                 let payload = self.read(parse_big_endian(&length.as_slice()));
                 println!("Length {:?} Payload: {:?}", length, payload);
+                match payload {
+                    Some(data) => Some(Message::from_bytes(data)),
+                    _ => None
+                }
+            },
+            _ => {
+                println!("No data received for {}", &self.peer);
+                None
             }
-            Err(_) => println!("No data received for {}", &self.peer)
         }
     }
 
-    fn read(&mut self, bytes_to_read: u32) -> Result<Vec<u8>, Error> {
+    pub fn send_data(&mut self, message:Message) {
+        self.stream.write_all(&message.to_bytes()).unwrap();
+    }
+
+    fn read(&mut self, bytes_to_read: u32) -> Option<Vec<u8>> {
         let mut buf = vec![];
         let stream_ref = &mut self.stream;
         let mut take = stream_ref.take(bytes_to_read as u64);
@@ -70,13 +81,13 @@ impl PeerConnection {
         match bytes_read {
             Ok(n) => {
                 if (n as u32) == bytes_to_read {
-                    Ok(buf)
+                    Some(buf)
                 } else {
-                    Err(Error::new(ErrorKind::Other, "No data received"))
+                    None
                 }
             }
             Err(e) => {
-                Err(e)
+                None
             }
         }
     }

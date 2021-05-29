@@ -26,11 +26,11 @@ pub struct Info {
     name: String,
     pieces: ByteBuf,
     #[serde(rename="piece length")]
-    piece_length: i64,
+    pub piece_length: u64,
     #[serde(default)]
     md5sum: Option<String>,
     #[serde(default)]
-    pub length: Option<i64>,
+    pub length: Option<u64>,
     #[serde(default)]
     files: Option<Vec<File>>,
     #[serde(default)]
@@ -98,7 +98,7 @@ impl TorrentMetadata {
         println!("created by:\t{:?}", self.created_by);
         println!("encoding:\t{:?}", self.encoding);
         println!("piece length:\t{:?}", self.info.piece_length);
-        println!("pieces:\t{:?}", self.info.pieces_hash);
+        println!("length:\t\t{:?}", self.info.length.unwrap());
         println!("private:\t{:?}", self.info.private);
         println!("root hash:\t{:?}", self.info.root_hash);
         println!("md5sum:\t\t{:?}", self.info.md5sum);

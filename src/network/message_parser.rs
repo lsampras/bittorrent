@@ -1,4 +1,4 @@
-use crate::utils::{parse_big_endian, convert_u8_to_bits};
+use crate::utils::{parse_big_endian, convert_u8_to_bits, u32_to_big_endian};
 
 pub enum Message {
     Choke,
@@ -37,8 +37,24 @@ impl Message {
                 parse_big_endian(&msg_payload[4..8]),
                 msg_payload[8..].to_owned()
             ),
-            [8] => Message::Cancel(parse_big_endian(&msg_payload[0..4])),
+            [8] => {
+                println!(" Cancel Request parsed {:?}", &msg_payload);
+                Message::Cancel(parse_big_endian(&msg_payload[0..4]))
+            },
             _ => panic!("Unsupported msg_type {:?} with data {:?}", msg_id, data)
+        }
+    }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        match self {
+            Message::Request(piece_index, offset, length) => {
+                let mut data: Vec<u8> = vec![6];
+                data.extend(u32_to_big_endian(piece_index));
+                data.extend(u32_to_big_endian(offset));
+                data.extend(u32_to_big_endian(length));
+                data
+            }
+            _ => panic!("Serialize not implemented for")
         }
     }
 }
