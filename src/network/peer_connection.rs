@@ -1,7 +1,5 @@
-use std::net::{IpAddr, Ipv4Addr};
 use std::net::{TcpStream, SocketAddr};
-use std::fmt::Formatter;
-use std::io::{Read, Write, Error, ErrorKind};
+use std::io::{Read, Write, Error};
 use std::time::Duration;
 use crate::torrent_meta::TorrentMetadata;
 use crate::utils::{PEER_ID, PROTOCOL, parse_big_endian};
@@ -87,6 +85,7 @@ impl PeerConnection {
                 }
             }
             Err(e) => {
+                println!("Error reading bytes {}", e);
                 None
             }
         }

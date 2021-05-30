@@ -167,7 +167,7 @@ impl PeerState {
                                 }
                             }
                         },
-                        Message::Cancel(have) => {
+                        Message::Cancel(_have) => {
                             // TODO; implement this
                             println!("Received a cancel from {}", self.peer)
                         }
