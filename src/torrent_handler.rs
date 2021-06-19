@@ -5,6 +5,7 @@ use crate::tracker::TrackerResponse;
 use crate::storage::piece::Piece;
 use crate::network::message_parser::Message;
 use crate::network::peer_connection::PeerConnection;
+use std::sync::{Arc, Mutex};
 
 use std::{thread, time};
 
@@ -21,50 +22,31 @@ pub struct PeerState {
 }
 
 #[derive(Debug)]
+pub struct PieceHandler {
+    have: Vec<bool>,
+    want: Vec<bool>,
+    pub pieces: Vec<Piece>
+}
+
+#[derive(Debug)]
 pub struct TorrentState {
     torrent_meta: TorrentMetadata,
     tracker_info: TrackerResponse,
-    have: Vec<bool>,
-    want: Vec<bool>,
-    pub pieces: Vec<Piece>,
-    pub peers: Vec<PeerState>
+    pub peers: Vec<PeerState>,
+    pub piece_handler: Arc<Mutex<PieceHandler>>
 }
 
-impl TorrentState {
+impl PieceHandler {
+    pub fn create(hashes: &Vec<Vec<u8>>, piece_length: u64) -> Self {
 
-    pub fn create(torrent_meta: TorrentMetadata, tracker_res : TrackerResponse) -> Self {
+        PieceHandler {
 
-        let mut torrent_state = TorrentState {
-            torrent_meta: torrent_meta,
-            tracker_info: tracker_res,
-            pieces: vec![],
-            have: vec![],
-            want: vec![],
-            peers: vec![],
-        };
-
-        torrent_state.init_storage();
-        // torrent_state.init_peers();
-        torrent_state
-    }
-
-    fn init_storage(&mut self) {
-        match &self.torrent_meta.info.pieces_hash {
-            Some(hashes) => {
-                self.pieces = hashes.iter().enumerate().map(|(idx, hash)| {
-                    Piece::new(self.torrent_meta.info.piece_length as u64, idx as u32, hash.to_vec())
-                }).collect();
-                self.want = vec![true; hashes.len()];
-                self.have = vec![false; hashes.len()];
-            },
-            None => panic!("Hash not found in meta")
+            pieces : hashes.iter().enumerate().map(|(idx, hash)| {
+                Piece::new(piece_length, idx as u32, hash.to_vec())
+            }).collect(),
+            want: vec![true; hashes.len()],
+            have: vec![false; hashes.len()],
         }
-    }
-
-    fn init_peers(&mut self) {
-        self.peers = self.tracker_info.peers.clone().iter().enumerate().map(|(idx, peer)| {
-            PeerState::new(peer.to_owned(), self.torrent_meta.clone(), idx, self.pieces.len())
-        }).collect();
     }
 
     pub fn store_data(&mut self, piece_index:u32, offset:u32, data:Vec<u8>) {
@@ -79,6 +61,29 @@ impl TorrentState {
             }
         }
         None
+    }
+}
+
+impl TorrentState {
+
+    pub fn create(torrent_meta: TorrentMetadata, tracker_res : TrackerResponse) -> Self {
+
+        let piece_mutex = Arc::new(Mutex::new(PieceHandler::create(&torrent_meta.info.pieces_hash.clone().unwrap(), torrent_meta.info.piece_length)));
+        let mut torrent_state = TorrentState {
+            torrent_meta: torrent_meta,
+            tracker_info: tracker_res,
+            peers: vec![],
+            piece_handler: piece_mutex
+        };
+        // torrent_state.init_peers();
+        torrent_state
+    }
+
+    fn init_peers(&mut self, pieces_len: usize) {
+
+        self.peers = self.tracker_info.peers[0..1].to_vec().iter().enumerate().map(|(idx, peer)| {
+            PeerState::new(peer.to_owned(), self.torrent_meta.clone(), idx, pieces_len)
+        }).collect();
     }
 
     // pub fn run(&mut self) {
@@ -102,7 +107,7 @@ impl PeerState {
         }
     }
 
-    pub fn run(&mut self, torrent_state: &mut TorrentState) {
+    pub fn run(&mut self, piece_handler: Arc<Mutex<PieceHandler>>) {
         self.connection.handshake();
         let mut stop_flag = false;
         while !stop_flag {
@@ -119,7 +124,7 @@ impl PeerState {
                             self.choked = false;
                             if !self.choked {
 
-                                match torrent_state.get_block_request() {
+                                match piece_handler.lock().unwrap().get_block_request() {
                                     Some((index, offset, len)) => {
     
                                         println!("Requesting {}  for piece {}, offset {}, len{}", self.peer, index, offset, len);
@@ -152,12 +157,12 @@ impl PeerState {
                         Message::Piece(piece_index, offset, block) => {
                             // TODO: Use a multithread safe approach here
                             println!("{} has sent a piece {}, offset {}, len{}", self.peer, piece_index, offset, &block.len());
-                            torrent_state.store_data(piece_index, offset, block);
+                            piece_handler.lock().unwrap().store_data(piece_index, offset, block);
 
                             // TODO: request next piece
                             if !self.choked {
 
-                                match torrent_state.get_block_request() {
+                                match piece_handler.lock().unwrap().get_block_request() {
                                     Some((index, offset, len)) => {
     
                                         println!("Requesting {}  for piece {}, offset {}, len{}", self.peer, index, offset, len);

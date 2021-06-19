@@ -1,5 +1,6 @@
 use crate::utils::{parse_big_endian, convert_u8_to_bits, u32_to_big_endian};
 
+#[derive(Debug)]
 pub enum Message {
     Choke,
     UnChoke,

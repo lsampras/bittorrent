@@ -47,14 +47,14 @@ impl PeerConnection {
         let _reserved = self.read(8).unwrap();
         let _info_hash = self.read(20).unwrap();
         let _peer_id = self.read(20).unwrap();
-        println!("Received handshake");
+        println!("Received handshake: {:#?} {:#?} {:#?} {:#?}", _pstr, _reserved, _info_hash, _peer_id);
     }
 
     pub fn fetch_data(&mut self) -> Option<Message> {
         match self.read(4) {
             Some(length) => {
                 let payload = self.read(parse_big_endian(&length.as_slice()));
-                println!("Length {:?} Payload: {:?}", length, payload);
+                // println!("Length {:?} Payload: {:?}", length, payload);
                 match payload {
                     Some(data) => Some(Message::from_bytes(data)),
                     _ => None

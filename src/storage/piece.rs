@@ -16,7 +16,7 @@ impl Piece {
         let num_blocks = length/BLOCK_SIZE;
         Piece {
             piece_length: length,
-            data_blocks: vec![],
+            data_blocks: vec![vec![]; num_blocks as usize],
             blocks_downloaded: vec![false; num_blocks as usize],
             requested_blocks_index: vec![],
             is_complete: false,

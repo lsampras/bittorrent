@@ -98,7 +98,7 @@ impl TorrentMetadata {
         println!("created by:\t{:?}", self.created_by);
         println!("encoding:\t{:?}", self.encoding);
         println!("piece length:\t{:?}", self.info.piece_length);
-        println!("length:\t\t{:?}", self.info.length.unwrap());
+        println!("length:\t\t{:?}", self.info.length);
         println!("private:\t{:?}", self.info.private);
         println!("root hash:\t{:?}", self.info.root_hash);
         println!("md5sum:\t\t{:?}", self.info.md5sum);
