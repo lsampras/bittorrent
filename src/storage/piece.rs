@@ -1,3 +1,7 @@
+
+use crypto::sha1::Sha1;
+use crypto::digest::Digest;
+
 #[derive(Debug)]
 pub struct Piece {
     pub piece_length: u64,
@@ -42,6 +46,17 @@ impl Piece {
             }
         }
         self.is_complete = true;
+        println!("Verifying hash for piece: {}", self.index);
+        let data: Vec<u8> = self.data_blocks.clone().into_iter().flatten().collect();
+        let mut hasher = Sha1::new();
+        hasher.input(&data[..]);
+        let mut hex: Vec<u8> = vec![0; 20];
+        hasher.result(&mut hex);
+        if hex == self.hash {
+            println!("Hash verified Succesfully for piece {}", self.index);
+        } else {
+            println!("Hash mismatch!\n expected:\t{:?}\n actual:\t{:?}", self.hash, hex);
+        }
     }
 
     pub fn get_next_block_request(&self) -> (u32, u64, u64) {

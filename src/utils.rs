@@ -4,7 +4,7 @@ use std::io::Cursor;
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 
 // TODO: Use a random string for PEER ID
-pub const PEER_ID : &str = "-TR2940-k9hj0wgej5ch";
+pub const PEER_ID : &str = "-TR2940-k9hj0wfej5ch";
 pub const PROTOCOL: &'static str = "BitTorrent protocol";
 
 pub fn parameterize(parameters: Vec<(&str, &str)>) -> String {
